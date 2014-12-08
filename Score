@@ -1,0 +1,25 @@
+package caesar;
+
+/*
+ * A Score is a datum that consists of a ScoreType and a value.
+ * The type refers to the category (Auctoritas, Money, etc)
+ * and the value is the amount by which to change it (positive or negative)
+ */
+public class Score {
+
+	ScoreType type;
+	int value; 
+	
+	public Score(ScoreType _type, int _value){
+		type = _type;
+		value = _value;
+	}
+	
+	public ScoreType getType() {
+		return type;
+	}
+	
+	public int getN() {
+		return value;
+	}
+}
