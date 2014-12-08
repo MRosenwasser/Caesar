@@ -1,0 +1,25 @@
+package caesar;
+
+/*
+ * A Question is a complete stage in the game that consists of
+ * both a prompt for the user (that explains a situation and provides
+ * various choices) as well as an array of responses, one for each choice. 
+ */
+public class Question {
+
+	String prompt; //a situation and choices to be presented to the user.
+	Response[] responses; //an array of responses (reply message + score changes) 
+	
+	public Question(String _prompt, Response[] _responses){
+		prompt = _prompt;
+		responses = _responses;
+	}
+	
+	public String getPrompt(){
+		return prompt;
+	}
+	
+	public Response[] getResponses(){
+		return responses;
+	}
+}
