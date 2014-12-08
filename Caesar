@@ -1,0 +1,613 @@
+package caesar;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+
+/*
+ * Caesar is a text-based decision game that takes the player
+ * on a journey through the eyes of C Julius Caesar from 
+ * his birth in 100 BCE to his death 44 BCE (unless they take
+ * a wrong turn along the way). Decisions affect various scores
+ * that can have disastrous and (usually) fatal consequences. 
+ */
+public class Caesar {
+
+	boolean gameOn = true; //this variable keeps the game running
+	boolean booty = false; //this variable allows you to print score changes
+	int q = -1; //the current question number
+	int choice = 0; //the user's choice for questions
+	Hashtable<ScoreType, Integer> scores = new Hashtable<ScoreType, Integer>(); //contains the scores
+	Question[] questions = new Question[25]; //the array of questions
+	int[] fourteen = new int[4]; //special case for q14
+	
+	public Caesar() {
+		init(); //starts the game
+	}
+	
+	/*
+	 * Run manages the game and is the programming meat of the program.
+	 * It loops on gameOn, moving to the next turn, parsing input,
+	 * executing the appropriate response, and then checking vitals
+	 * before repeating. Throughout the loop it accounts for various other
+	 * special cases such as the final screen, termination, and question 14. 
+	 */
+	public void run(){
+		
+		//this loop continues until the user permanently quits
+		while(gameOn){
+			nextTurn(); //goes to the next turn
+			if(q==24){
+				//end of game
+				terminate();
+			} else {
+				int choice = parseInput(); //finds the user input
+				if(choice == -1){ //indicates 0=quit
+					terminate();
+				} else {
+					//special case Question 14
+					if(q==14){
+						//builds an array of responses (since multiple choice)
+						int count = 0;
+						for(int i=0; i<4; i++){
+							if(fourteen[i] != -1){
+								count += fourteen[i]; 
+								executeResponse(fourteen[i]);
+							}
+						}
+						if(count < 2){
+							terminate();
+						}
+					} else {
+						executeResponse(choice); //executes the response the user indicated
+					}
+					checkVitals(); //checks to ensure that Vita does not equal 0
+				}
+			}
+		}
+		
+	}
+	
+	/*
+	 * Init initialises the questions and scores array. It contains
+	 * all the questions (their prompts and responses) and thus the
+	 * prime educational meat of the program. 
+	 */
+	public void init(){
+		System.out.println("-------------C--A--E--S--A--R------------");
+		for(ScoreType type: ScoreType.values()){
+			scores.put(type, 1); //initialises base scores
+		}
+		for(int i=0; i<4; i++){
+			fourteen[i] = -1;
+		}
+		
+		//===================================0================================
+		String p0 = "The year is 100 BCE and with the dawn of the century rises another star:\n"
+				+ "Your name is Gaius Julius Caesar. Every life is a series of choices, and some are more\n"
+				+ "pre-determined and innocuous than others. These are not your choices. Before you here\n"
+				+ "lies an array of decisions that will affect not only your fate, but the fate of Rome herself\n"
+				+ "and even the world. Choose wisely...\n\n"
+				+ "Select each option by pressing a number and then enter.\n"
+				+ "At any time you may press 0 to quit\n"
+				+ "Please enter 1 now to continue";
+		String r0 = "Your adventure awaits...";
+		//Actually initialises scores to their appropriate individual values
+		List<Score> s0 = Arrays.asList(new Score(ScoreType.Vita, 0), new Score(ScoreType.Italia, 4), new Score(ScoreType.Populares, 6),
+				new Score(ScoreType.Optimates, 9), new Score(ScoreType.Auctoritas, 6), new Score(ScoreType.Money, 7), new Score(ScoreType.Pompey, 3),
+				new Score(ScoreType.Crassus, 3));
+		Response[] response0 = {new Response(r0, s0)};
+		Question q0 = new Question(p0, response0);
+		questions[0] = q0;		
+		//===================================1================================
+		String p1 = "91 - Tribune of the Plebs M. Livius Drusus proposes a bill to give "
+				+ "the Italian allies Roman citizenship.\n"
+				+ "1 - They've fought for the glory of Rome, let them have it.\n"
+				+ "2 - I'm only 9, I'll stay out of politics for now\n"
+				+ "3 - Kill him! He must must be stopped!";
+		String r11 = "Your proposal was not appreciated by the Roman elite. Drusus was assassinated "
+				+ "and the Italians are now fighting against Rome in the Social War.";
+		List<Score> s11 = Arrays.asList(new Score(ScoreType.Italia, 4), new Score(ScoreType.Optimates, -4), new Score(ScoreType.Populares, 3));
+		String r12 = "Fair enough, young Caesar, but your time will come. Drusus was assassinated "
+				+ "without your help, precipitating the Social War between Rome and the new Italia confederacy.";
+		List<Score> s12 = Arrays.asList(new Score(ScoreType.Italia, -1), new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, -1), new Score(ScoreType.Auctoritas, -1));
+		String r13 = "Ding dong Drusus is dead! The Italians, however, did not appreciate your obstinacy "
+				+ "and have revolted. Welcome to the Social War!";
+		List<Score> s13 = Arrays.asList(new Score(ScoreType.Italia, -3), new Score(ScoreType.Optimates, +2), new Score(ScoreType.Populares, -2));
+		Response[] response1 = {new Response(r11, s11), new Response(r12, s12), new Response(r13, s13)};
+		Question q1 = new Question(p1, response1);
+		questions[1] = q1;
+		//===================================2================================
+		String p2 = "90 - the lex Julia is passed, granting rights to Italians who didn't revolt.\n"
+				+ "Please press 1 to continue";
+		String r2 = "Brownie points with the Italians for being part of the gens Julia";
+		List<Score> s2 = Arrays.asList(new Score(ScoreType.Italia, 1));
+		Response[] response2 = {new Response(r2, s2)};
+		Question q2 = new Question(p2, response2);
+		questions[2] = q2;
+		//===================================3================================
+		String p3 = "88 - After having his command stripped away, Sulla is now marching "
+				+ "on urbs Roma itself with six legions!\n"
+				+ "1 - Pomerium, shmerium! The mos maiorum (ancestral traditions) aren't what they used to be anyways.\n"
+				+ "2 - Here's the line, I think you've crossed it! Go back to Asia, Sulla!\n";
+		String r31 = "So be it! Sulla consolidates his power in Rome and returns out East.\n"
+				+ "Marius returns and carries out a bloody purge of Sulla's supporters.";
+		List<Score> s31 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		String r32 = "Way to stick up for the maiores (ancestors)! Sulla took the city, but did go back to "
+				+ "Asia to fight Mithridates. You're safe, for now...";
+		List<Score> s32 = Arrays.asList(new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, 2));
+		Response[] response3 = {new Response(r31, s31), new Response(r32, s32)};
+		Question q3 = new Question(p3, response3);
+		questions[3] = q3;
+		//====================================4===============================
+		String p4 = "87 - With Sulla gone, Marius marches back to Rome with Cinna and takes the city.\n"
+				+ "1 - Hey, that Marius guy is my uncle. Rock on!\n"
+				+ "2 - I should probably marry Cinna's daughter...";
+		String r41 = "Good pietas (piety), young one";
+		List<Score> s41 = Arrays.asList(new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, 1));
+		String r42 = "Good move! You've been nominated to be Flamen Dialis, high priest of Jupiter!";
+		List<Score> s42 = Arrays.asList(new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, 2));
+		Response[] response4 = {new Response(r41, s41), new Response(r42, s42)};
+		Question q4 = new Question(p4, response4);
+		questions[4] = q4;
+		//====================================5===============================
+		String p5 = "82 - With the war against Mithridates won, Sulla once again marches on Rome,"
+				+ "tearing through all opposition in Italy.\n"
+				+ "1 - Take the priesthood, take the money, I'm out!\n"
+				+ "2 - You won't take Cornelia (Cinna's daughter) away from me!\n"
+				+ "3 - My name is Gaius Julius Caesar, you fought my uncle, now prepare to die!";
+		String r51 = "Good choice! Now you can go fight in Cilicia!";
+		List<Score> s51 = Arrays.asList(new Score(ScoreType.Money, -1));
+		String r52 = "Your fides is noted, but be sure to thank your mother and her family for "
+				+ "really saving your butt!";
+		List<Score> s52 = Arrays.asList(new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, 1), new Score(ScoreType.Auctoritas, 1));
+		String r53 = "Nice try, but it's time you prepare to die!";
+		List<Score> s53 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		Response[] response5 = {new Response(r51, s51), new Response(r52, s52), new Response(r53, s53)};
+		Question q5 = new Question(p5, response5);
+		questions[5] = q5;
+		//====================================6===============================
+		String p6 = "Sulla's dictatorship has passed and so has his life. Back in Rome you are "
+				+ "finally becoming a real man.\n"
+				+ "1 - Real men study oratory in Rhodes.\n"
+				+ "2 - Real men stay in Rome and do politics.";
+		String r61 = "You've chosen wisely. May your tongue be as sharp as your wit.";
+		List<Score> s61 = Arrays.asList(new Score(ScoreType.Auctoritas, 2));
+		String r62 = "Good choice, but remember, everything in Rome is up for sale these days "
+				+ "but it isn't cheap";
+		List<Score> s62 = Arrays.asList(new Score(ScoreType.Money, -3), new Score(ScoreType.Italia, 1));
+		Response[] response6 = {new Response(r61, s61), new Response(r62, s62)};
+		Question q6 = new Question(p6, response6);
+		questions[6] = q6;
+		//====================================7===============================
+		String p7 = "Oh no, you've been kidnapped by pirates on the Aegean!\n"
+				+ "1 - Bloody pirates! Eat my Caesar salad! I'll crucify you all!\n"
+				+ "2 - Well darn! Best do my pirate chores until they get the ransom";
+		String r71 = "After bullying the pirates and being released, you raise a fleet and stay "
+				+ "true to your threat of crucifixion.";
+		List<Score> s71 = Arrays.asList(new Score(ScoreType.Auctoritas, 2));
+		String r72 = "They get the ransom and you go home, but you probably could've done better.";
+		List<Score> s72 = Arrays.asList(new Score(ScoreType.Auctoritas, -2), new Score(ScoreType.Money, -1));
+		Response[] response7 = {new Response(r71, s71), new Response(r72, s72)};
+		Question q7 = new Question(p7, response7);
+		questions[7] = q7;
+		//====================================8===============================
+		String p8 = "69 - Congratulations! You've been elected quaestor. Out in Hispania "
+				+ "you encounter a statue of Alexander the Great.\n"
+				+ "1 - So what? I'm still a rockstar!\n"
+				+ "2 - I'm so old! Why isn't the world already at my feet!";
+		String r81 = "Please take a break in this game to better appreciate the Greatness of Alexander";
+		List<Score> s81 = Collections.emptyList();
+		String r82 = "One day, Caesar. One day!";
+		List<Score> s82 = Arrays.asList(new Score(ScoreType.Auctoritas, 1));
+		Response[] response8 = {new Response(r81, s81), new Response(r82, s82)};
+		Question q8 = new Question(p8, response8);
+		questions[8] = q8;
+		//=====================================9==============================
+		String p9 = "69 - Auntie Julie's time has come. Would you like to deliver her funeral oration?\n"
+				+ "1 - No thanks, it's not my place and a bit too controversial\n"
+				+ "2 - Sure, she was my favourite aunt\n"
+				+ "3 - Yes! I'll use it to praise my heroes and shame my enemies!";
+		String r91 = "May she rest in peace, as with your backbone";
+		List<Score> s91 = Arrays.asList(new Score(ScoreType.Auctoritas, -2), new Score(ScoreType.Optimates, 1));
+		String r92 = "It was a lovely speech, may she rest in peace.";
+		List<Score> s92 = Arrays.asList(new Score(ScoreType.Auctoritas, 1));
+		String r93 = "You sure did praise the heck out of her husband Marius. Ahhh, Caesar, "
+				+ "there is many a Marius in you...";
+		List<Score> s93 = Arrays.asList(new Score(ScoreType.Auctoritas, 2), new Score(ScoreType.Optimates, -2), new Score(ScoreType.Populares, 2));
+		Response[] response9 = {new Response(r91, s91), new Response(r92, s92), new Response(r93, s93)};
+		Question q9 = new Question(p9, response9);
+		questions[9] = q9;
+		//=====================================10==============================
+		String p10 = "63 - Gaius Rabirius is on trial for perduellio (a form of treason) "
+				+ "for having killed Saturninus, the sacrosanct plebian tribune. You're judge. "
+				+ "What's the verdict?\n"
+				+ "1 - Guilty! I was the one who bribed the prosecutor in the first place!\n"
+				+ "2 - Not guilty! He was justified under the senatus consultum ultimum and kept our Republic safe.";
+		String r101 = "Kudos for protecting the right to a trial! But the trial was never concluded.";
+		List<Score> s101 = Arrays.asList(new Score(ScoreType.Optimates, -2), new Score(ScoreType.Populares, 2), new Score(ScoreType.Money, -2));
+		String r102 = "Fair enough. That's a powerful ultimatum - the SCU. But the trial was never concluded";
+		List<Score> s102 = Arrays.asList(new Score(ScoreType.Optimates, 3), new Score(ScoreType.Populares, -2));
+		Response[] response10 = {new Response(r101, s101), new Response(r102, s102)};
+		Question q10 = new Question(p10, response10);
+		questions[10] = q10;
+		//=====================================11==============================
+		String p11 = "63 - Elections are up for Pontifex Maximus (head priest). Sound like a good idea?\n"
+				+ "1 - No thanks, the priesthood thing didn't work out too well last time.\n"
+				+ "2 - I'll give it a shot.\n"
+				+ "3 - Yea! I should probably bribe everyone just to be safe!";
+		String r111 = "No guts no glory. Or are you just waiting for your big move?";
+		List<Score> s111 = Arrays.asList(new Score(ScoreType.Optimates, 1), new Score(ScoreType.Populares, -1));
+		String r112 = "No ice, no dice. Offices cost money these days!";
+		List<Score> s112 = Arrays.asList(new Score(ScoreType.Optimates, -1));
+		String r113 = "Good call, you won! Otherwise you'd have some serious debt issues...";
+		List<Score> s113 = Arrays.asList(new Score(ScoreType.Optimates, -1), new Score(ScoreType.Populares, -1), new Score(ScoreType.Auctoritas, 2));
+		Response[] response11 = {new Response(r111, s111), new Response(r112, s112), new Response(r113, s113)};
+		Question q11 = new Question(p11, response11);
+		questions[11] = q11;
+		//=====================================12==============================
+		String p12 = "62 - You know what Romans think is a real drag? DRAG! The Bona Dea festival "
+				+ "is held at your house as Pontifex Maximus and Clodius Pulcher causes quite a scandal "
+				+ "with your wife! Oops!\n"
+				+ "Please press 1 to continue.";
+		String r121 = "";
+		List<Score> s121 = Arrays.asList(new Score(ScoreType.Auctoritas, -1), new Score(ScoreType.Optimates, 2));
+		Response[] response12 = {new Response(r121, s121)};
+		Question q12 = new Question(p12, response12);
+		questions[12] = q12;
+		//=====================================13==============================
+		String p13 = "61 - You received a governorship in Hispania Ulterior, but have some debts to settle.\n"
+				+ "1 - I'm Caesar, I'm too big to fail! They can pry the money from my cold, dead, hands!\n"
+				+ "2 - I'll just get money from Crassus in exchange for support against Pompey.";
+		String r1312 = "Your pockets are wearing thin, hope you find a tailor soon...";
+		List<Score> s1312 = Arrays.asList(new Score(ScoreType.Money, -3));
+		String r132 = "Good move, imperator. You conquered the Callaici and Lusitani in Spain!";
+		List<Score> s132 = Arrays.asList(new Score(ScoreType.Pompey, -1), new Score(ScoreType.Crassus, 1), new Score(ScoreType.Money, 2));
+		Response[] response13 = {new Response(r1312, s1312), new Response(r132, s132)};
+		Question q13 = new Question(p13, response13);
+		questions[13] = q13;
+		//======================================14=============================
+		String p14 = "59 - Congratulations! You've been elected consul! You've also entered into a pact "
+				+ "with Pompey and Crassus known as the 'First Triumvirate.'\nWhat laws would you like to "
+				+ "propose? (You may select multiple, e.g. '1 2 3 4')\n"
+				+ "1 - Lex Julia de Repetundis (curbs governors' powers and extortion/ bribery\n"
+				+ "2 - Publishing the Acta Senatus (the deliberations of the Senate)\n"
+				+ "3 - Remission of debt in Asia\n"
+				+ "4 - Create colonies for Pomepy's veterans and urban poor";
+		String r141 = "1 - Passed";
+		List<Score> s141 = Arrays.asList(new Score(ScoreType.Pompey, -1), new Score(ScoreType.Crassus, -1));
+		String r142 = "2 - Passed";
+		List<Score> s142 = Arrays.asList(new Score(ScoreType.Pompey, 1), new Score(ScoreType.Optimates, -1), new Score(ScoreType.Italia, 1));
+		String r143 = "3 - Passed";
+		List<Score> s143 = Arrays.asList(new Score(ScoreType.Crassus, 2), new Score(ScoreType.Money, 2));
+		String r144 = "4 - Passed";
+		List<Score> s144 = Arrays.asList(new Score(ScoreType.Pompey, 2), new Score(ScoreType.Populares, 1), 
+				new Score(ScoreType.Optimates, -1), new Score(ScoreType.Italia, 1));
+		Response[] response14 = {new Response(r141, s141), new Response(r142, s142), new Response(r143, s143), new Response(r144, s144)};
+		Question q14 = new Question(p14, response14);
+		questions[14] = q14;
+		//======================================15=============================
+		String p15 = "58 - After your consulship you head out to Gaul with 4 legions. The Helvetians "
+				+ "are planning to go west through our province of Gallia Transalpina.\nThe Aedui and "
+				+ "Allobroges have asked for assistance in repelling them. Your orders?\n"
+				+ "1 - They'll pass and it's none of our concern what rogue Gauls do.\n"
+				+ "2 - We must help our northern friends!\n"
+				+ "3 - This is an offense to the Roman people. Attack!!";
+		String r151 = "Our relations with Gallic tribes have worsened and we have suffered losses in the province";
+		List<Score> s151 = Arrays.asList(new Score(ScoreType.Auctoritas, -3));
+		String r152 = "Nice bone toss, but the Germans have sensed your weakness and are moving in from the east.";
+		List<Score> s152 = Arrays.asList(new Score(ScoreType.Optimates, -1));
+		String r153 = "The Helvetians and all of Gaul have been subdued. Congratulations.";
+		List<Score> s153 = Arrays.asList(new Score(ScoreType.Money, 2), new Score(ScoreType.Pompey, -1), new Score(ScoreType.Auctoritas, 2), new Score(ScoreType.Crassus, -1));
+		Response[] response15 = {new Response(r151, s151), new Response(r152, s152), new Response(r153, s153)};
+		Question q15 = new Question(p15, response15);
+		questions[15] = q15;
+		//==================================16=================================
+		String p16 = "56 - The situation in Rome is deteriorating. Clodius is attacking your laws "
+				+ "and the pact with Crassus and Pompey is falling apart as well.\n"
+				+ "1 - The triumvirate must stand!\n"
+				+ "2 - Fine! I'll go at it alone!";
+		String r161 = "Ita vero. Live long and prosper";
+		List<Score> s161 = Arrays.asList(new Score(ScoreType.Auctoritas, -2));
+		String r162 = "Nice bone toss, but the Germans have sensed your weakness and are moving in from the east.";
+		List<Score> s162 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		Response[] response16 = {new Response(r161, s161), new Response(r162, s162)};
+		Question q16 = new Question(p16, response16);
+		questions[16] = q16;		
+		//===================================17================================
+		String p17 = "55 - The triumvirate is reaffirmed and you received another 5 year post in Gaul. "
+				+ "Rumour has it that a Britanic tribe aided your enemies.\n"
+				+ "1 - Invade Britain!!\n"
+				+ "2 - That's a wide Channel...";
+		String r171 = "Tallyhoe! All of Rome thirsts for you tales of invasion. Although some crave darker ambitions...";
+		List<Score> s171 = Arrays.asList(new Score(ScoreType.Auctoritas, 2));
+		String r172 = "Nothing ventured, nothing gained";
+		List<Score> s172 = Arrays.asList(new Score(ScoreType.Auctoritas, -1));
+		Response[] response17 = {new Response(r171, s171), new Response(r172, s172)};
+		Question q17 = new Question(p17, response17);
+		questions[17] = q17;
+		//===================================18================================
+		String p18 = "The year is 49. Crassus has died fighting the Parthians, Pompey has coerced the Senate\n"
+				+ "to demand the resignation of your command, and your plebeian tribune friends have fled\n"
+				+ "the city in fear. You stand in Ravenna at the bank of the Rubicon...\n"
+				+ "1 - I must obey the Senate and the mos maiorum. Marching into Italy with"
+				+ "my legions is not right!\n"
+				+ "2 - They disobeyed the will of the plebs and the mos maiorum. I must march on Rome and restore the Republic!";
+		String r181 = "Honourable choice. Yet although the Roman Republic may live on, your may not.";
+		List<Score> s181 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		String r182 = "ALEA IACTA ESTO! Let the die be cast!";
+		List<Score> s182 = Arrays.asList(new Score(ScoreType.Pompey, -3)); //special case
+		Response[] response18 = {new Response(r181, s181), new Response(r182, s182)};
+		Question q18 = new Question(p18, response18);
+		questions[18] = q18;
+		//===================================19================================
+		String p19 = "You take Rome, aided by Italians along the way. Yet another Civil War ensues "
+				+ "as Pompey flees across the Mediterranean.\nDefeated in Illyria, he flees to Egypt "
+				+ "where he is executed by Ptolemy XIII of Egypt,\nwho is also in the midst of a struggle "
+				+ "for power with his sister, Cleopatra.\n"
+				+ "1 - The execution of a Roman commander will not be tolerated. Kill him!\n"
+				+ "2 - Thank you Ptolemy. Let me dispatch Cleopatra in return.";
+		String r191 = "Your pietas is admired.";
+		List<Score> s191 = Arrays.asList(new Score(ScoreType.Auctoritas, 2));
+		String r192 = "Your lack of respect is noted, for pietas and for true beauty.";
+		List<Score> s192 = Arrays.asList(new Score(ScoreType.Auctoritas, -2));
+		Response[] response19 = {new Response(r191, s191), new Response(r192, s192)};
+		Question q19 = new Question(p19, response19);
+		questions[19] = q19;
+		//====================================20===============================
+		String p20 = "Cleopatra rises up to the throne and you rise up too ;)\n"
+				+ "1 - Let's make babies!\n"
+				+ "2 - Let's make babies and give you a statue in the temple of Venus!";
+		String r201 = "Congratulations on Caesarion. He is the son of kings, but of what kingdom?";
+		List<Score> s201 = Arrays.asList(new Score(ScoreType.Auctoritas, -2));
+		String r202 = "Congratulations on Caesarion. Weird how the queen of Egypt stands opposite\n"
+				+ "Venus, mother of Rome...";
+		List<Score> s202 = Arrays.asList(new Score(ScoreType.Vita, -3));
+		Response[] response20 = {new Response(r201, s201), new Response(r202, s202)};
+		Question q20 = new Question(p20, response20);
+		questions[20] = q20;
+		//===================================21================================
+		String p21 = "47-45 - You sweep through the East and subdue the kingdom of Pontus in 5 days\n"
+				+ "VENISTI VIDISTI VICISTI! After defeatng Metellus Scipio the Pompeian in Africa\n"
+				+ "and Pompey's own sons Gnaeus and Sextus in Spain, you return to Rome for your\n"
+				+ "much deserved triumphs.\n"
+				+ "1 - No thanks, the one in Egypt tired me out.\n"
+				+ "2 - Yes, praise the conqueror of Egypt, Africa, Asia, and Spain!\n"
+				+ "3 - Thank you, now Pompey and Scipio know who's boss.";
+		String r211 = "Aren't triumphs typically celebrated in Rome?";
+		List<Score> s211 = Arrays.asList(new Score(ScoreType.Auctoritas, -1));
+		String r212 = "Yes, praise the conqueror of Egypt, Africa, Asia, and Spain!";
+		List<Score> s212 = Arrays.asList(new Score(ScoreType.Auctoritas, 1));
+		String r213 = "So are you also conqueror of Rome?";
+		List<Score> s213 = Arrays.asList(new Score(ScoreType.Auctoritas, -2));
+		Response[] response21 = {new Response(r211, s211), new Response(r212, s212), new Response(r213, s213)};
+		Question q21 = new Question(p21, response21);
+		questions[21] = q21;
+		//===================================22================================
+		String p22 = "The Senate deems you dictator perpetuo (dictator for life) and you become\n"
+				+ "'Prefect of Morals' with the power to add and remove Senators as well as all the rights\n"
+				+ "of a Plebeian Tribune. Congratulations!\n"
+				+ "Press 1 to Continue";
+		String r221 = "All the people love you, Caesar. Well, almost all...";
+		List<Score> s221 = Arrays.asList(new Score(ScoreType.Auctoritas, 2), new Score(ScoreType.Optimates, -2));
+		Response[] response22 = {new Response(r221, s221)};
+		Question q22 = new Question(p22, response22);
+		questions[22] = q22; 
+		//===================================23================================
+		String p23 = "44, February - You are presented with a diadem from Marcus Antonius\n"
+				+ "the symbol of kingship.\n"
+				+ "1 - Why thank you, it covers my baldness even better than this laurel\n"
+				+ "2 - Non sum rex sed Caesar (I am not king, but Caesar)";
+		String r231 = "Sic semper tyrannus! It's been 460 years, but Rome is still not ready\n"
+				+ "for another king, not yet.";
+		List<Score> s231 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		String r232 = "Smart move, but isn't dictator perpetuo the same thing?";
+		List<Score> s232 = Arrays.asList(new Score(ScoreType.Auctoritas, -1));
+		Response[] response23 = {new Response(r231, s231), new Response(r232, s232)};
+		Question q23 = new Question(p23, response23);
+		questions[23] = q23;
+		//===================================24================================
+		String p24 = "44, March 15 - Despite protestations from you wife due to bad omens about today,\n"
+				+ "You walk to the Curia to meet the Senate. On the way you are warned by a soothsayer\n"
+				+ "that the Ides of March have come, but not yet gone. At the Senate, the Senators stand\n"
+				+ "to greet you. Then they attack, plunging daggers into your body 23 times. There is nothing\n"
+				+ "for you to do as you bleed out at the foot of Pompey's statue, but wonder,\n"
+				+ "Did I make the right choices...";
+		String r241 = "";
+		List<Score> s241 = Arrays.asList(new Score(ScoreType.Vita, -1));
+		Response[] response24 = {new Response(r241, s241)};
+		Question q24 = new Question(p24, response24);
+		questions[24] = q24;	
+		
+		
+	}
+	
+	/*
+	 * NextTurn progresses the game into the next turn.
+	 * It checks special cases, increments the q counter, and
+	 * the prints the prompt of the new question. 
+	 */
+	public void nextTurn(){
+		specialCases(); //performs any changes necessary based on score conditions
+		q++; //moves to next question
+		Question currQ = questions[q]; //accesses the current question 
+		String prompt = currQ.getPrompt(); //grabs the prompt from the question
+		System.out.println("\n"); 
+		System.out.println(prompt); //prints the prompt
+		
+	}
+	
+	/*
+	 * ParseInput - parses the input of the user and returns it.
+	 * It loops for valid input, ensuring the input is within the range of responses
+	 * as well as a valid numerical response.
+	 * NB: 0-quit, 5-print scores, "booty" to toggle printing every score change
+	 */
+	public int parseInput() {
+		boolean validInput = false;
+		choice = 0;
+		int numChoice = 1;
+		if(q!=24){
+			numChoice = questions[q].getResponses().length;
+		}
+		while(!validInput){
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+			String line;
+			try {
+				line = reader.readLine();
+				String[] input = line.split(" ");
+				if(input[0].equals("booty")){
+					booty = !booty;
+				} else {
+					try{
+						if(q == 14){
+							for(int i=0; i<input.length; i++){
+								fourteen[i] = Integer.parseInt(input[i]) - 1;
+							}
+						}
+						choice = Integer.parseInt(input[0]);
+						if(choice==5){
+							printScore();
+						} else if(choice >= 0 && choice <= numChoice){
+							validInput = true;
+						} else {
+							System.out.println("Please indicate you choice with a number - 1\nOr enter 0 to quit");
+						}
+					} catch (NumberFormatException e){
+						validInput = false;
+						System.out.println("Please indicate you choice with a number - 1\nOr enter 0 to quit");
+					}
+				}
+			} catch (IOException e1) {
+				System.out.println("Please indicate you choice with a number - 1\nOr enter 0 to quit");
+			}
+		}
+	return (choice-1);
+	}
+	
+	/*
+	 * ExecuteResponse - given a valid choice, it executes the correlating response
+	 * of the question determined by the current question number.
+	 * It updates the scores and prints the response message. 
+	 */
+	public void executeResponse(int choice){
+		Response[] responses = questions[q].getResponses();
+		Response r = responses[choice];
+		String message = r.getMessage();
+		List<Score> points = r.getPoints();
+		System.out.println(message);
+		updateScore(points);
+	}
+	
+	/*
+	 * UpdateScore takes in a set of score changes from a response 
+	 * and updates the score list accordingly.
+	 */
+	public void updateScore(List<Score> new_scores){
+		Iterator<Score> iter = new_scores.iterator();
+		while(iter.hasNext()){
+			Score curr = iter.next();
+			ScoreType type = curr.getType();
+			int n = curr.getN();
+			int prevValue = scores.get(type);
+			scores.put(type, n+prevValue);
+			if(booty){	
+				String toprint = type.toString();
+				if(n>0) toprint = toprint + " +";
+				System.out.println(toprint + " " + n);
+			}
+		}
+	}
+
+	/*
+	 * SpecialCases handles irregular questions that deal with
+	 * forked or optional paths as well as substitution of response
+	 * if certain score conditions are met. 
+	 */
+	public void specialCases(){
+		if(q==6 && choice ==2){
+			q++;
+		} else if(q==7){
+			q++;
+		} else if (q == 11 && choice != 3){
+			q++;
+		} else if(q ==12 && scores.get(ScoreType.Money) < 3){
+			String r1311 = "Well, they did!";
+			List<Score> s1311 = Arrays.asList(new Score(ScoreType.Vita, -1));
+			questions[13].getResponses()[0] = (new Response(r1311, s1311));
+		} else if (q == 15 && (scores.get(ScoreType.Pompey) < 2 || scores.get(ScoreType.Crassus) < 3)){
+			String r162 = "Sorry, but maybe you should have treated your 'friends' better.\n"
+					+ "They don't see things quite the same way.";
+			List<Score> s162 = Arrays.asList(new Score(ScoreType.Vita, -1));
+			questions[16].getResponses()[1] = (new Response(r162, s162));
+		} else if (q==17 && (scores.get(ScoreType.Auctoritas) < 11 || scores.get(ScoreType.Italia) < 4 || scores.get(ScoreType.Populares) < 10)){
+			String r182 = "ALEA IACTA ESTO! The die is cast! But the odds are not in your favour.\n"
+					+ "Your auctoritas among your soldiers is not enough to carry you across the Rubicon\n"
+					+ "and the citisens of Italy and Rome love you, but not that much.";
+			List<Score> s182 = Arrays.asList(new Score(ScoreType.Vita, -1));
+			questions[18].getResponses()[1] = new Response(r182, s182);
+		} else if (q == 19 && choice == 2){
+			q++;
+		}
+		
+	}
+
+	/*
+	 * CheckVitals - checks the Vita score to make sure that the player is still alive 
+	 * NB: if Vita = 0 dead, else alive
+	 */
+	public void checkVitals(){
+		int alive = scores.get(ScoreType.Vita);
+		if(alive == 0){
+			terminate();
+		}
+	}
+	
+	/*
+	 * Terminate - asks the user if they want to quit or restart
+	 * if quit (0), the loop cuts and the game ends,
+	 * if restart (1), the program reinitialises the game and starts over
+	 */
+	public void terminate(){
+		System.out.println("Your time has come, Caesar. If you would like to play again,\n"
+				+ "Press 0 to quit.\n" 
+				+ "Press 1 to restart\n"
+				+ "Thank you for playing!");
+		
+		int choice = parseInput();
+		if(choice == -1){
+			gameOn = false;
+			System.out.println("Goodbye\n");
+		} else {
+			q = -1;
+			choice = 0;
+			init();
+		}
+	}
+	
+	/*
+	 * PrintScore - prints all the scores and their values
+	 */
+	public void printScore(){
+		System.out.println("__SCORES__");
+		Set<ScoreType> keys = scores.keySet();
+		for(ScoreType s: keys){
+			String field = s.toString();
+			int n = scores.get(s);
+			System.out.println(field + ": " + n);
+		}
+	}
+	
+	public static void main(String[] args) {
+		Caesar caesar = new Caesar();
+		caesar.run();
+	}
+
+}
