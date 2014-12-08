@@ -1,0 +1,20 @@
+package caesar;
+
+/*
+ * ScoreType categories are the different types of
+ * points a player can have. Each is independent of 
+ * the others and they are affected by choices made
+ * in the game. 
+ */
+public enum ScoreType {
+
+	Vita, //Vita is 1 (if alive) or 0 (if dead) 
+	Auctoritas,
+	Populares,
+	Optimates,
+	Money,
+	Italia,
+	Pompey,
+	Crassus;
+	
+}
