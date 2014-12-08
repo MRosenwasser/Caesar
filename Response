@@ -1,0 +1,28 @@
+package caesar;
+
+import java.util.List;
+
+/*
+ * A response is the result that occurs after a prompt in answered.
+ * It consists of a message that is displayed to the player
+ * and a set of score changes that are to be enacted. 
+ */
+public class Response {
+
+	String message; //This is the message reply
+	List<Score> points; //This is the list of score changes
+	
+	public Response (String _message, List<Score> _points){
+		message = _message;
+		points = _points;
+	}
+	
+	public String getMessage(){
+		return message;
+	}
+	
+	public List<Score> getPoints(){
+		return points;
+	}
+	
+}
